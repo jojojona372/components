@@ -5,6 +5,8 @@
 clear
 clc
 
+[n,comp,defflow,defcomp] = defaultSettings;
+
 % Flow names are not required, they are just here to make it easier to
 % understand.
 
@@ -24,16 +26,21 @@ n(1).s = XSteam('s_ph',n(1).p,n(1).h);
 % The output pressure is 10 bar
 n(3).p = 10;    % bar
 
+% These two lines set defaults for all components and flows, to ensure that
+% all necessary fields exist. This (hopefully) prevents errors from occurring.
+n = setdefflow(n,defflow,3);
+comp = setdefcomp(comp,defcomp,1);
+
 % This is the line that calculates the properties of the flow that comes
 % from the pump.
 % n is the structure that contains the flows.
 % 1,2,3 are the numbers of the ingoing, isentropic, and
 % outgoing flow in that order.
 % comp is the structure that contains the components
-% The last 1 is the component number of the pump
+% The 1 after comp is the component number of the pump
 [n,comp] = pump(n,1,2,3,comp,1);
 
-% This open the variable window so you can see all the properties that have
+% This opens the variable window so you can see all the properties that have
 % been calculated.
 open n
 

@@ -1,21 +1,23 @@
 % Author: Jona van der Pal
 % Date: 13/03/2022
+% Version: 22032022
 
-function [h,qout] = condenser(in1,in2)
-    if (isfield(in1,'p')&&isfield(in2,'p'))&&in1.p~=in2.p
-        error("The inlet pressure is not equal to the outlet pressure!")
+function [n,comp] = condenser(n,f1,f2,comp,nr)
+    if isempty(n(f1).p)
+        error("The pressure is missing from the input stream.");
     end
-    if isfield(in1,'p')
-        h = XSteam('hV_p',in1.p);
-    elseif isfield(in2,'p')
-        h = XSteam('hV_p',in2.p);
-    elseif isfield(in2,'t')
-        h = XSteam('hV_t',in2.t);
-    else
-        error("Please enter the pressure or the temperature of the outgoing flow.")
+    if isempty(n(f1).t)
+        error("The temperature is missing from the input stream.");
     end
-    if isnan(h)
-        error("The enthalpy of the outgoing stream is NaN. Please calculate the enthalpy of the ingoing stream before calling this function.");
-    end
-    qout = n1.h-h;
+    
+    n(f1).h = XSteam('h_pt',n(f1).p,n(f1).t);
+    
+    n(f2).p = n(f1).p;
+    n(f2).t = XSteam('tsat_p',n(f2).p);
+    n(f2).h = XSteam('hL_p',n(f2).p);
+    n(f2).s = xs('sL_p',n(f2).p);
+    n(f2).x = 0;
+    
+    comp(nr).qout = n(f1).h-n(f2).h;
+    comp(nr).qin = -comp(nr).qout;
 end

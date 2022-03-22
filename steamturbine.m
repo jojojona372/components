@@ -1,6 +1,6 @@
 % Author: Jona van der Pal
 % Date: 13/03/2022
-% Version: 13032022.2
+% Version: 22032022
 
 function [n,comp] = steamturbine(n,f1,f2s,f2,comp,nr)
     %% This checks if the outgoing flow already has a pressure.
@@ -17,21 +17,21 @@ function [n,comp] = steamturbine(n,f1,f2s,f2,comp,nr)
         error("System is overdeterminate: The pressure of the isentropic outgoing flow is not the same as the pressure of the normal outgoing flow.")
     end
     %% 
-    if ~isfield(n(f1),'h')
-        if isfield(n(f1),'t')&&isfield(n(f1),'p')
+    if ~isfield(n(f1),'h')||isempty(n(f1).h)
+        if isfield(n(f1),'t')&&~isempty(n(f1).t)&&isfield(n(f1),'p')&&~isempty(n(f1).p)
             n(f1).h = XSteam('h_pt',n(f1).p,n(f1).t);
-        elseif isfield(n(f1),'p')&&isfield(n(f1),'s')
+        elseif isfield(n(f1),'p')&&~isempty(n(f1).p)&&isfield(n(f1),'s')&&~isempty(n(f1).s)
             n(f1).h = XSteam('h_ps',n(f1).p,n(f1).s);
         else
             error("System is underdeterminate: The enthalpy is missing from the ingoing flow, and cannot be determined from the other flow properties.");
         end
     end
-    if ~isfield(n(f1),'s')
+    if ~isfield(n(f1),'s')||isempty(n(f1).s)
         n(f1).s = XSteam('s_ph',n(f1).p,n(f1).h);
     end
     n(f2s).s = n(f1).s;
     n(f2s).h = XSteam('h_ps',n(f2).p,n(f2s).s);
-    n(f2).h = n(f1).h-((n(f2s).h-n(f1).h)*comp(nr).ef);
+    n(f2).h = n(f1).h-(comp(nr).ef*(n(f1).h-n(f2s).h));
     if isnan(n(f2).h)
         error("The enthalpy of the outgoing stream is NaN. Please calculate the enthalpy of the ingoing stream before calling this function.");
     end
@@ -39,6 +39,9 @@ function [n,comp] = steamturbine(n,f1,f2s,f2,comp,nr)
     n(f2).t = XSteam('t_ph',n(f2).p,n(f2).h);
     % Calculating the work output
     comp(nr).wout = n(f1).h-n(f2).h;
+    % The work "input" is equal to ws = h2s-h1, which is equal to the work
+    % output divided by the isentropic efficiency.
+    comp(nr).win = -comp(nr).wout/comp(nr).ef; %= n(f2s).h-n(f1).h;
     % Calculating the quality of the mixture at the turbine exit
     n(f2s).x = XSteam('x_ph',n(f2s).p,n(f2s).h);
     n(f2).x = XSteam('x_ph',n(f2).p,n(f2).h);
